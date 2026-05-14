@@ -75,6 +75,6 @@ public class MemberService {
 		if (member.getProfileImageKey() == null) {
 			throw new IllegalArgumentException("프로필 이미지가 없습니다. id: " + id);
 		}
-		return ProfileImageUrlResponse.from(s3Service.getPresignedUrl(member.getProfileImageKey()));
+		return ProfileImageUrlResponse.from(s3Service.getCloudFrontUrl(member.getProfileImageKey()));
 	}
 }

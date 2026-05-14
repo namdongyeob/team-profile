@@ -25,6 +25,9 @@ public class S3Service {
 	@Value("${spring.cloud.aws.s3.bucket}")
 	private String bucket;
 
+	@Value("${spring.cloud.aws.s3.bucket}")
+	private String cloudFrontDomain;
+
 	public String upload(Long memberId, MultipartFile file) {
 		try {
 			String key = "uploads/" + memberId + "_" + UUID.randomUUID() + "_" + file.getOriginalFilename();
@@ -36,10 +39,9 @@ public class S3Service {
 			throw new RuntimeException("파일 업로드 실패", e);
 		}
 	}
-
-	public String getPresignedUrl(String key) {
-		URL url = s3Template.createSignedGetURL(bucket, key, PRESIGNED_URL_EXPIRATION);
-		log.info("[S3 - LOG] Presigned URL 생성 - key: {}", key);
-		return url.toString();
+	public String getCloudFrontUrl(String key) {
+		String url = "https://" + cloudFrontDomain + "/" + key;
+		log.info("[S3 - LOG] CloudFront URL 생성 - key: {}", key);
+		return url;
 	}
 }
