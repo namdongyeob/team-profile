@@ -11,11 +11,7 @@ spring:
       ddl-auto: update
     show-sql: false
     database-platform: org.hibernate.dialect.MySQLDialect
-
-management:
-  info:
-    env:
-      enabled: true
-
-info:
-  team-name: ${MY_NAME}
+  cloud:
+    aws:
+      s3:
+        bucket: team-profile-729049749839-files

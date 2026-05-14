@@ -6,11 +6,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.teamprofile.member.dto.MemberResponse;
 import com.example.teamprofile.member.dto.MemberSaveRequest;
 import com.example.teamprofile.member.service.MemberService;
+import com.example.teamprofile.s3.dto.ProfileImageUploadResponse;
+import com.example.teamprofile.s3.dto.ProfileImageUrlResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -50,5 +54,19 @@ public class MemberController {
 		log.info("[API - LOG] GET /api/members/{}", id);
 		MemberResponse response = memberService.findById(id);
 		return ResponseEntity.ok(response);
+	}
+
+	@PostMapping("/{id}/profile-image")
+	public ResponseEntity<ProfileImageUploadResponse> uploadProfileImage(
+		@PathVariable Long id,
+		@RequestParam("file") MultipartFile file) {
+		log.info("[API - LOG] POST /api/members/{}/profile-image", id);
+		return ResponseEntity.ok(memberService.uploadProfileImage(id, file));
+	}
+
+	@GetMapping("/{id}/profile-image")
+	public ResponseEntity<ProfileImageUrlResponse> getProfileImageUrl(@PathVariable Long id) {
+		log.info("[API - LOG] GET /api/members/{}/profile-image", id);
+		return ResponseEntity.ok(memberService.getProfileImageUrl(id));
 	}
 }

@@ -2,11 +2,15 @@ package com.example.teamprofile.member.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.teamprofile.member.dto.MemberResponse;
 import com.example.teamprofile.member.dto.MemberSaveRequest;
 import com.example.teamprofile.member.entity.Member;
 import com.example.teamprofile.member.repository.MemberRepository;
+import com.example.teamprofile.s3.dto.ProfileImageUploadResponse;
+import com.example.teamprofile.s3.dto.ProfileImageUrlResponse;
+import com.example.teamprofile.s3.service.S3Service;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class MemberService {
 	private final MemberRepository memberRepository;
+	private final S3Service s3Service;
 
 	/**
 	 * 새로운 팀원을 저장합니다.
@@ -51,5 +56,25 @@ public class MemberService {
 				return new IllegalArgumentException("팀원을 찾을 수 없습니다. id: " + id);
 			});
 		return MemberResponse.from(member);
+	}
+
+	@Transactional
+	public ProfileImageUploadResponse uploadProfileImage(Long id, MultipartFile file) {
+		log.info("[API - LOG] 프로필 이미지 업로드 요청 - memberId: {}", id);
+		Member member = memberRepository.findById(id)
+			.orElseThrow(() -> new IllegalArgumentException("팀원을 찾을 수 없습니다. id: " + id));
+		String key = s3Service.upload(id, file);
+		member.updateProfileImageKey(key);
+		return ProfileImageUploadResponse.from(key);
+	}
+
+	public ProfileImageUrlResponse getProfileImageUrl(Long id) {
+		log.info("[API - LOG] 프로필 이미지 URL 조회 요청 - memberId: {}", id);
+		Member member = memberRepository.findById(id)
+			.orElseThrow(() -> new IllegalArgumentException("팀원을 찾을 수 없습니다. id: " + id));
+		if (member.getProfileImageKey() == null) {
+			throw new IllegalArgumentException("프로필 이미지가 없습니다. id: " + id);
+		}
+		return ProfileImageUrlResponse.from(s3Service.getPresignedUrl(member.getProfileImageKey()));
 	}
 }
