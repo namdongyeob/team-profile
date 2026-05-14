@@ -45,7 +45,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build --platform linux/amd64 -t namdongyeob/team-profile:latest .
+          docker build --platform linux/arm64 -t namdongyeob/team-profile:latest .
           docker push namdongyeob/team-profile:latest
 
       - name: Deploy to EC2
