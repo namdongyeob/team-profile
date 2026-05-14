@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: aws-parameterstore:/team-profile/prod/
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -14,3 +16,11 @@ logging:
   level:
     root: INFO
     com.example.teamprofile: INFO
+
+management:
+  info:
+    env:
+      enabled: true
+
+info:
+  team-name: ${team-name}
