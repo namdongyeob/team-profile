@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Profile</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --text: #202633;
+      --muted: #667085;
+      --line: #dde3ee;
+      --accent: #2563eb;
+      --accent-soft: #e8f0ff;
+      --danger: #b42318;
+      --danger-soft: #fff1f0;
+      --shadow: 0 18px 45px rgba(31, 41, 55, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 34rem),
+        var(--bg);
+    }
+
+    main {
+      width: min(100%, 1040px);
+      margin: 0 auto;
+      padding: 56px 20px;
+    }
+
+    .page-header {
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.08;
+    }
+
+    .subtitle {
+      max-width: 640px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.6;
+    }
+
+    .status {
+      min-height: 24px;
+      margin: 26px 0 18px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .error-list {
+      display: none;
+      margin: 0 0 20px;
+      padding: 14px 16px;
+      border: 1px solid #ffd2cc;
+      border-radius: 8px;
+      color: var(--danger);
+      background: var(--danger-soft);
+      line-height: 1.5;
+    }
+
+    .error-list.visible {
+      display: block;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      display: grid;
+      grid-template-columns: 132px 1fr;
+      gap: 20px;
+      min-height: 188px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .profile-image {
+      width: 132px;
+      height: 132px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: var(--accent-soft);
+    }
+
+    .card-body {
+      min-width: 0;
+      align-self: center;
+    }
+
+    .member-name {
+      margin: 0 0 14px;
+      overflow-wrap: anywhere;
+      font-size: 25px;
+      line-height: 1.2;
+    }
+
+    .details {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+    }
+
+    .detail-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .detail-label {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .detail-value {
+      font-size: 15px;
+      font-weight: 700;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .empty {
+      display: none;
+      padding: 22px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.72);
+      text-align: center;
+    }
+
+    .empty.visible {
+      display: block;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding: 38px 16px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .card {
+        grid-template-columns: 1fr;
+      }
+
+      .profile-image {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="page-header">
+      <p class="eyebrow">Team Profile</p>
+      <h1>팀원 소개</h1>
+      <p class="subtitle">팀원 정보를 불러와 프로필 카드로 보여줍니다.</p>
+    </header>
+
+    <p id="status" class="status" role="status">팀원 정보를 불러오는 중입니다.</p>
+    <section id="errors" class="error-list" aria-live="polite"></section>
+    <section id="cards" class="cards" aria-label="팀원 목록"></section>
+    <section id="empty" class="empty">표시할 수 있는 팀원 정보가 없습니다.</section>
+  </main>
+
+  <script>
+    const API_BASE_URL = "https://team-profile.click/api/members";
+    const IMAGE_BASE_URL = "https://d1o99a9x70rw82.cloudfront.net";
+    const MEMBER_IDS = [4, 5, 6, 7, 8];
+
+    const statusElement = document.getElementById("status");
+    const errorsElement = document.getElementById("errors");
+    const cardsElement = document.getElementById("cards");
+    const emptyElement = document.getElementById("empty");
+
+    document.addEventListener("DOMContentLoaded", loadMembers);
+
+    async function loadMembers() {
+      const results = await Promise.allSettled(MEMBER_IDS.map(fetchMember));
+      const members = [];
+      const errors = [];
+
+      results.forEach((result, index) => {
+        const memberId = MEMBER_IDS[index];
+
+        if (result.status === "fulfilled") {
+          members.push(result.value);
+          return;
+        }
+
+        errors.push(`${memberId}번 팀원 정보를 불러오지 못했습니다. ${result.reason.message}`);
+      });
+
+      renderMembers(members);
+      renderErrors(errors);
+
+      statusElement.textContent = members.length > 0
+        ? `총 ${members.length}명의 팀원 정보를 불러왔습니다.`
+        : "";
+      emptyElement.classList.toggle("visible", members.length === 0);
+    }
+
+    async function fetchMember(id) {
+      const response = await fetch(`${API_BASE_URL}/${id}`, {
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`서버 응답 코드: ${response.status}`);
+      }
+
+      const member = await response.json();
+      validateMember(member);
+      return member;
+    }
+
+    function validateMember(member) {
+      const requiredFields = ["name", "age", "mbti"];  // profileImageKey 제거
+      const missingField = requiredFields.find((field) =>
+              member[field] === undefined || member[field] === null || member[field] === "");
+      if (missingField) {
+        throw new Error(`필수 값이 없습니다: ${missingField}`);
+      }
+    }
+
+    function renderMembers(members) {
+      cardsElement.innerHTML = "";
+
+      members.forEach((member) => {
+        const card = document.createElement("article");
+        card.className = "card";
+
+        const image = document.createElement("img");
+        image.className = "profile-image";
+        image.src = `${IMAGE_BASE_URL}/${member.profileImageKey}`;
+        image.alt = `${member.name} 프로필 이미지`;
+
+        const body = document.createElement("div");
+        body.className = "card-body";
+
+        const name = document.createElement("h2");
+        name.className = "member-name";
+        name.textContent = member.name;
+
+        const details = document.createElement("dl");
+        details.className = "details";
+        details.append(createDetail("나이", `${member.age}세`));
+        details.append(createDetail("MBTI", member.mbti));
+
+        body.append(name, details);
+        card.append(image, body);
+        cardsElement.append(card);
+      });
+    }
+
+    function createDetail(label, value) {
+      const row = document.createElement("div");
+      row.className = "detail-row";
+
+      const term = document.createElement("dt");
+      term.className = "detail-label";
+      term.textContent = label;
+
+      const description = document.createElement("dd");
+      description.className = "detail-value";
+      description.textContent = value;
+
+      row.append(term, description);
+      return row;
+    }
+
+    function renderErrors(errors) {
+      errorsElement.innerHTML = "";
+      errorsElement.classList.toggle("visible", errors.length > 0);
+
+      if (errors.length === 0) {
+        return;
+      }
+
+      const list = document.createElement("ul");
+      list.style.margin = "0";
+      list.style.paddingLeft = "20px";
+
+      errors.forEach((message) => {
+        const item = document.createElement("li");
+        item.textContent = message;
+        list.append(item);
+      });
+
+      errorsElement.append(list);
+    }
+  </script>
+</body>
+</html>
