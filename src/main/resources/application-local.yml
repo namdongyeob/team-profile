@@ -17,6 +17,13 @@ spring:
       s3:
         bucket: team-profile-729049749839-files
 
+my-name: local-team
+
+cloud:
+  aws:
+    cloudfront:
+      domain: localhost
+
 logging:
   level:
     root: INFO
