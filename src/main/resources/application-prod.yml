@@ -15,7 +15,8 @@ spring:
     aws:
       s3:
         bucket: team-profile-729049749839-files
-        cloud:
-          aws:
-            cloudfront:
-              domain: d1o99a9x70rw82.cloudfront.net
+
+cloud:
+  aws:
+    cloudfront:
+      domain: d1o99a9x70rw82.cloudfront.net
