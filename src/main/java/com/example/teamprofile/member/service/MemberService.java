@@ -62,7 +62,10 @@ public class MemberService {
 	public ProfileImageUploadResponse uploadProfileImage(Long id, MultipartFile file) {
 		log.info("[API - LOG] 프로필 이미지 업로드 요청 - memberId: {}", id);
 		Member member = memberRepository.findById(id)
-			.orElseThrow(() -> new IllegalArgumentException("팀원을 찾을 수 없습니다. id: " + id));
+			.orElseThrow(() -> {
+				log.error("[API - LOG] 팀원을 찾을 수 없음 - id: {}", id);
+				return new IllegalArgumentException("팀원을 찾을 수 없습니다. id: " + id);
+			});
 		String key = s3Service.upload(id, file);
 		member.updateProfileImageKey(key);
 		return ProfileImageUploadResponse.from(key);
@@ -71,8 +74,12 @@ public class MemberService {
 	public ProfileImageUrlResponse getProfileImageUrl(Long id) {
 		log.info("[API - LOG] 프로필 이미지 URL 조회 요청 - memberId: {}", id);
 		Member member = memberRepository.findById(id)
-			.orElseThrow(() -> new IllegalArgumentException("팀원을 찾을 수 없습니다. id: " + id));
+			.orElseThrow(() -> {
+				log.error("[API - LOG] 팀원을 찾을 수 없음 - id: {}", id);
+				return new IllegalArgumentException("팀원을 찾을 수 없습니다. id: " + id);
+			});
 		if (member.getProfileImageKey() == null) {
+			log.error("[API - LOG] 프로필 이미지가 없음 - id: {}", id);
 			throw new IllegalArgumentException("프로필 이미지가 없습니다. id: " + id);
 		}
 		return ProfileImageUrlResponse.from(s3Service.getCloudFrontUrl(member.getProfileImageKey()));
