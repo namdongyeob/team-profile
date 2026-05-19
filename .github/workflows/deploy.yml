@@ -126,5 +126,5 @@ jobs:
             fi
             sleep 30
           done
-          echo "❌ 타임아웃"
+          echo "Deployment timeout"
           exit 1
