@@ -2,13 +2,14 @@ package com.example.teamprofile.global;
 
 import java.util.Map;
 
-import org.springframework.http.HttpStatus;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.example.teamprofile.global.exception.MemberNotFoundException;
-import com.example.teamprofile.global.exception.ProfileImageNotFoundException;
+import com.example.teamprofile.global.exception.BusinessException;
+import com.example.teamprofile.global.exception.ErrorCode;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,31 +20,48 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-	@ExceptionHandler(MemberNotFoundException.class)
-	public ResponseEntity<Map<String, String>> handleMemberNotFoundException(MemberNotFoundException e) {
-		log.error("[API - ERROR] 팀원을 찾을 수 없습니다.", e);
-		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			.body(Map.of("message", e.getMessage()));
-	}
-
-	@ExceptionHandler(ProfileImageNotFoundException.class)
-	public ResponseEntity<Map<String, String>> handleProfileImageNotFoundException(ProfileImageNotFoundException e) {
-		log.error("[API - ERROR] 프로필 이미지가 없습니다.", e);
-		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			.body(Map.of("message", e.getMessage()));
+	@ExceptionHandler(BusinessException.class)
+	public ResponseEntity<Map<String, String>> handleBusinessException(BusinessException e) {
+		ErrorCode errorCode = e.getErrorCode();
+		log.error("[API - ERROR] {}", e.getMessage(), e);
+		return ResponseEntity.status(errorCode.getStatus())
+			.body(createErrorResponse(errorCode, e.getMessage()));
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException e) {
-		log.error("[API - ERROR] 잘못된 요청입니다.", e);
-		return ResponseEntity.badRequest()
-			.body(Map.of("message", e.getMessage()));
+		ErrorCode errorCode = ErrorCode.INVALID_REQUEST;
+		log.error("[API - ERROR] {}", e.getMessage(), e);
+		return ResponseEntity.status(errorCode.getStatus())
+			.body(createErrorResponse(errorCode, e.getMessage()));
+	}
+
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<Map<String, String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+		ErrorCode errorCode = ErrorCode.INVALID_REQUEST;
+		String message = e.getBindingResult()
+			.getFieldErrors()
+			.stream()
+			.findFirst()
+			.map(DefaultMessageSourceResolvable::getDefaultMessage)
+			.orElse(errorCode.getMessage());
+		log.error("[API - ERROR] {}", message, e);
+		return ResponseEntity.status(errorCode.getStatus())
+			.body(createErrorResponse(errorCode, message));
 	}
 
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<Map<String, String>> handleException(Exception e) {
-		log.error("[API - ERROR] 서버 오류가 발생했습니다.", e);
-		return ResponseEntity.internalServerError()
-			.body(Map.of("message", "서버 오류가 발생했습니다."));
+		ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+		log.error("[API - ERROR] {}", errorCode.getMessage(), e);
+		return ResponseEntity.status(errorCode.getStatus())
+			.body(createErrorResponse(errorCode, errorCode.getMessage()));
+	}
+
+	private Map<String, String> createErrorResponse(ErrorCode errorCode, String message) {
+		return Map.of(
+			"code", errorCode.name(),
+			"message", message
+		);
 	}
 }

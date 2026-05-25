@@ -4,8 +4,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.teamprofile.global.exception.MemberNotFoundException;
-import com.example.teamprofile.global.exception.ProfileImageNotFoundException;
+import com.example.teamprofile.global.exception.BusinessException;
+import com.example.teamprofile.global.exception.ErrorCode;
 import com.example.teamprofile.member.dto.MemberResponse;
 import com.example.teamprofile.member.dto.MemberSaveRequest;
 import com.example.teamprofile.member.entity.Member;
@@ -47,7 +47,6 @@ public class MemberService {
 	 *
 	 * @param id 조회할 팀원의 ID
 	 * @return 조회된 팀원의 정보가 담긴 응답 객체
-	 * @throws MemberNotFoundException 팀원을 찾을 수 없는 경우 발생
 	 */
 	@Transactional(readOnly = true)
 	public MemberResponse findById(Long id) {
@@ -55,7 +54,7 @@ public class MemberService {
 		Member member = memberRepository.findById(id)
 			.orElseThrow(() -> {
 				log.error("[API - LOG] 팀원을 찾을 수 없음 - id: {}", id);
-				return new MemberNotFoundException(id);
+				return new BusinessException(ErrorCode.MEMBER_NOT_FOUND, id);
 			});
 		return MemberResponse.from(member);
 	}
@@ -66,7 +65,7 @@ public class MemberService {
 		Member member = memberRepository.findById(id)
 			.orElseThrow(() -> {
 				log.error("[API - LOG] 팀원을 찾을 수 없음 - id: {}", id);
-				return new MemberNotFoundException(id);
+				return new BusinessException(ErrorCode.MEMBER_NOT_FOUND, id);
 			});
 		String key = s3Service.upload(id, file);
 		member.updateProfileImageKey(key);
@@ -78,11 +77,11 @@ public class MemberService {
 		Member member = memberRepository.findById(id)
 			.orElseThrow(() -> {
 				log.error("[API - LOG] 팀원을 찾을 수 없음 - id: {}", id);
-				return new MemberNotFoundException(id);
+				return new BusinessException(ErrorCode.MEMBER_NOT_FOUND, id);
 			});
 		if (member.getProfileImageKey() == null) {
 			log.error("[API - LOG] 프로필 이미지가 없음 - id: {}", id);
-			throw new ProfileImageNotFoundException(id);
+			throw new BusinessException(ErrorCode.PROFILE_IMAGE_NOT_FOUND, id);
 		}
 		return ProfileImageUrlResponse.from(s3Service.getCloudFrontUrl(member.getProfileImageKey()));
 	}

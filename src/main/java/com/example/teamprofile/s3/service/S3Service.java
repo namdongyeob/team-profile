@@ -1,13 +1,15 @@
 package com.example.teamprofile.s3.service;
 
 import java.io.IOException;
-import java.net.URL;
 import java.time.Duration;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.example.teamprofile.global.exception.BusinessException;
+import com.example.teamprofile.global.exception.ErrorCode;
 
 import io.awspring.cloud.s3.S3Template;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +38,7 @@ public class S3Service {
 			return key;
 		} catch (IOException e) {
 			log.error("[S3 - LOG] 파일 업로드 실패 - memberId: {}", memberId);
-			throw new RuntimeException("파일 업로드 실패", e);
+			throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED, e);
 		}
 	}
 	public String getCloudFrontUrl(String key) {
